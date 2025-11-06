@@ -1,0 +1,9 @@
+body { font-family: Arial, sans-serif; margin: 0; background: #f9f9f9; }
+.navbar { background: #2e4057; color: #fff; display: flex; justify-content: space-between; padding: 1rem 5%; }
+.navbar a { color: #fff; text-decoration: none; margin-left: 1rem; }
+.logo span { color: #f5c518; }
+.hero { background: url('/images/handloom_bg.jpg') center/cover; padding: 6rem 1rem; text-align: center; color: white; }
+.product-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap: 1.5rem; padding: 2rem; }
+.product-card { background: white; padding: 1rem; text-align: center; border-radius: 5px; }
+.checkout-btn { background: #28a745; color: #fff; padding: 0.5rem 1rem; border: none; }
+.checkout-btn:hover { background: #218838; }
