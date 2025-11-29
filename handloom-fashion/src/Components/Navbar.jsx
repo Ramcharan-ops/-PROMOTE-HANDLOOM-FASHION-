@@ -33,6 +33,7 @@ export default function Navbar({ cartCount }) {
         <li><Link to="/contact" style={{ color: 'white', textDecoration: 'none' }}>Contact</Link></li>
         <li><Link to="/admin" style={{ color: 'white', textDecoration: 'none' }}>Admin Tools</Link></li>
         <li><Link to="/user" style={{ color: 'white', textDecoration: 'none' }}>User Tools</Link></li>
+        <li><Link to="/login" style={{ color: 'white', textDecoration: 'none' }}>Login</Link></li>
       </ul>
     </nav>
   )

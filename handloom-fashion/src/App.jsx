@@ -6,6 +6,8 @@ import Products from './pages/Products'
 import Cart from './pages/Cart'
 import Contact from './pages/Contact'
 import AdminTool from './pages/AdminTool'
+import UserTool from './pages/UserTool'
+import Login from './pages/Login'
 function App() {
   const [cart, setCart] = useState([])
   const addToCart = (product) => {
@@ -23,6 +25,8 @@ function App() {
         <Route path="/cart" element={<Cart cart={cart} removeFromCart={removeFromCart} clearCart={clearCart} />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/admin" element={<AdminTool />} />
+        <Route path="/user" element={<UserTool />} />
+        <Route path="/login" element={<Login />} />
       </Routes>
     </>
   )

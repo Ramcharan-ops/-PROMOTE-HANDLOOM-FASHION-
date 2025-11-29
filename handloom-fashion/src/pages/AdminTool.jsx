@@ -5,6 +5,8 @@ const AdminTool = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [products, setProducts] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [registerMode, setRegisterMode] = useState(false);
+  const [registerData, setRegisterData] = useState({ username: '', password: '', confirm: '' });
   const navigate = useNavigate();
 
   // Mock admin credentials (In real app, use proper authentication)
@@ -13,6 +15,8 @@ const AdminTool = () => {
     password: 'admin123'
   };
 
+  const [storedAdmin, setStoredAdmin] = useState(null)
+
   const [loginData, setLoginData] = useState({
     username: '',
     password: ''
@@ -20,14 +24,33 @@ const AdminTool = () => {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    if (loginData.username === adminCredentials.username && 
-        loginData.password === adminCredentials.password) {
+    const creds = storedAdmin || adminCredentials
+    if (loginData.username === creds.username && loginData.password === creds.password) {
       setIsAuthenticated(true);
       localStorage.setItem('adminAuth', 'true');
     } else {
       alert('Invalid credentials');
     }
   };
+
+  const handleRegister = (e) => {
+    e.preventDefault()
+    const { username, password, confirm } = registerData
+    if (!username || !password) return alert('Please provide username and password')
+    if (password !== confirm) return alert('Passwords do not match')
+    const creds = { username, password }
+    try {
+      localStorage.setItem('hf_admin', JSON.stringify(creds))
+      setStoredAdmin(creds)
+      setIsAuthenticated(true)
+      localStorage.setItem('adminAuth', 'true')
+      setRegisterMode(false)
+      setRegisterData({ username: '', password: '', confirm: '' })
+    } catch (err) {
+      console.warn('Failed to save admin credentials', err)
+      alert('Could not save credentials')
+    }
+  }
 
   const handleLogout = () => {
     setIsAuthenticated(false);
@@ -43,27 +66,57 @@ const AdminTool = () => {
     price: ''
   });
 
+  // Load saved products from localStorage on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('hf_products')
+      if (raw) setProducts(JSON.parse(raw))
+    } catch (err) {
+      console.warn('Failed to load products from localStorage', err)
+    }
+    try {
+      const a = localStorage.getItem('hf_admin')
+      if (a) setStoredAdmin(JSON.parse(a))
+    } catch (err) {
+      console.warn('Failed to load admin creds', err)
+    }
+  }, [])
+
+  // Persist products to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('hf_products', JSON.stringify(products))
+    } catch (err) {
+      console.warn('Failed to save products to localStorage', err)
+    }
+  }, [products])
+
   const handleAddProduct = (e) => {
     e.preventDefault();
     if (newProduct.name && newProduct.price) {
-      setProducts([...products, { ...newProduct, id: Date.now() }]);
+      setProducts(prev => [...prev, { ...newProduct, id: Date.now() }]);
       setNewProduct({ name: '', desc: '', image: '', price: '' });
     }
   };
 
   const handleDeleteProduct = (productId) => {
-    setProducts(products.filter(p => p.id !== productId));
+    setProducts(prev => prev.filter(p => p.id !== productId));
   };
 
   const handleUpdateProduct = (e) => {
     e.preventDefault();
     if (selectedProduct) {
-      setProducts(products.map(p => 
-        p.id === selectedProduct.id ? selectedProduct : p
-      ));
+      setProducts(prev => prev.map(p => (p.id === selectedProduct.id ? selectedProduct : p)));
       setSelectedProduct(null);
     }
   };
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target
+    setSelectedProduct(prev => ({ ...prev, [name]: value }))
+  }
+
+  const handleCancelEdit = () => setSelectedProduct(null)
 
   // Check authentication on load
   useEffect(() => {
@@ -77,6 +130,7 @@ const AdminTool = () => {
     return (
       <div className="admin-login" style={styles.container}>
         <h2>Admin Login</h2>
+        {!registerMode ? (
         <form onSubmit={handleLogin} style={styles.form}>
           <input
             type="text"
@@ -94,6 +148,38 @@ const AdminTool = () => {
           />
           <button type="submit" style={styles.button}>Login</button>
         </form>
+        ) : (
+          <form onSubmit={handleRegister} style={styles.form}>
+            <input
+              type="text"
+              placeholder="Choose username"
+              value={registerData.username}
+              onChange={(e) => setRegisterData({...registerData, username: e.target.value})}
+              style={styles.input}
+            />
+            <input
+              type="password"
+              placeholder="Choose password"
+              value={registerData.password}
+              onChange={(e) => setRegisterData({...registerData, password: e.target.value})}
+              style={styles.input}
+            />
+            <input
+              type="password"
+              placeholder="Confirm password"
+              value={registerData.confirm}
+              onChange={(e) => setRegisterData({...registerData, confirm: e.target.value})}
+              style={styles.input}
+            />
+            <button type="submit" style={styles.button}>Register</button>
+            <button type="button" onClick={() => setRegisterMode(false)} style={{ ...styles.button, backgroundColor: '#6c757d' }}>Back</button>
+          </form>
+        )}
+        <div style={{ marginTop: 10 }}>
+          {!registerMode ? (
+            <button onClick={() => setRegisterMode(true)} style={{ ...styles.button, backgroundColor: '#17a2b8' }}>Register Admin</button>
+          ) : null}
+        </div>
       </div>
     );
   }
@@ -102,7 +188,15 @@ const AdminTool = () => {
     <div className="admin-dashboard" style={styles.container}>
       <div style={styles.header}>
         <h2>Admin Dashboard</h2>
-        <button onClick={handleLogout} style={styles.logoutButton}>Logout</button>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button onClick={handleLogout} style={styles.logoutButton}>Logout</button>
+          <button onClick={() => {
+            // remove stored admin credentials
+            localStorage.removeItem('hf_admin')
+            setStoredAdmin(null)
+            alert('Stored admin credentials removed')
+          }} style={{ ...styles.logoutButton, backgroundColor: '#6c757d' }}>Remove Stored Credentials</button>
+        </div>
       </div>
 
       {/* Product Management Section */}
@@ -141,6 +235,49 @@ const AdminTool = () => {
           />
           <button type="submit" style={styles.button}>Add Product</button>
         </form>
+
+        {/* Edit Product Form (shown when editing) */}
+        {selectedProduct && (
+          <form onSubmit={handleUpdateProduct} style={{ ...styles.form, backgroundColor: '#f7f9fb', padding: '15px', borderRadius: '6px' }}>
+            <h4>Edit Product</h4>
+            <input
+              type="text"
+              name="name"
+              value={selectedProduct.name}
+              onChange={handleEditChange}
+              placeholder="Product Name"
+              style={styles.input}
+            />
+            <input
+              type="text"
+              name="desc"
+              value={selectedProduct.desc}
+              onChange={handleEditChange}
+              placeholder="Description"
+              style={styles.input}
+            />
+            <input
+              type="text"
+              name="image"
+              value={selectedProduct.image}
+              onChange={handleEditChange}
+              placeholder="Image URL"
+              style={styles.input}
+            />
+            <input
+              type="number"
+              name="price"
+              value={selectedProduct.price}
+              onChange={handleEditChange}
+              placeholder="Price"
+              style={styles.input}
+            />
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button type="submit" style={styles.button}>Save</button>
+              <button type="button" onClick={handleCancelEdit} style={{ ...styles.button, backgroundColor: '#6c757d' }}>Cancel</button>
+            </div>
+          </form>
+        )}
 
         {/* Product List */}
         <div style={styles.productList}>
